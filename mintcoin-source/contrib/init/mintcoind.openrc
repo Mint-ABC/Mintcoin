@@ -1,0 +1,92 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/mintcoin/.mintcoin" ]; then
+	MINTCOIND_DEFAULT_DATADIR="/var/lib/mintcoin/.mintcoin"
+else
+	MINTCOIND_DEFAULT_DATADIR="/var/lib/mintcoind"
+fi
+
+MINTCOIND_CONFIGFILE=${MINTCOIND_CONFIGFILE:-/etc/mintcoin/mintcoin.conf}
+MINTCOIND_PIDDIR=${MINTCOIND_PIDDIR:-/var/run/mintcoind}
+MINTCOIND_PIDFILE=${MINTCOIND_PIDFILE:-${MINTCOIND_PIDDIR}/mintcoind.pid}
+MINTCOIND_DATADIR=${MINTCOIND_DATADIR:-${MINTCOIND_DEFAULT_DATADIR}}
+MINTCOIND_USER=${MINTCOIND_USER:-${MINTCOIN_USER:-mintcoin}}
+MINTCOIND_GROUP=${MINTCOIND_GROUP:-mintcoin}
+MINTCOIND_BIN=${MINTCOIND_BIN:-/usr/bin/mintcoind}
+MINTCOIND_NICE=${MINTCOIND_NICE:-${NICELEVEL:-0}}
+MINTCOIND_OPTS="${MINTCOIND_OPTS:-${MINTCOIN_OPTS}}"
+
+name="Mintcoin Core Daemon"
+description="Mintcoin cryptocurrency P2P network daemon"
+
+command="/usr/bin/mintcoind"
+command_args="-pid=\"${MINTCOIND_PIDFILE}\" \
+		-conf=\"${MINTCOIND_CONFIGFILE}\" \
+		-datadir=\"${MINTCOIND_DATADIR}\" \
+		-daemon \
+		${MINTCOIND_OPTS}"
+
+required_files="${MINTCOIND_CONFIGFILE}"
+start_stop_daemon_args="-u ${MINTCOIND_USER} \
+			-N ${MINTCOIND_NICE} -w 2000"
+pidfile="${MINTCOIND_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${MINTCOIND_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${MINTCOIND_USER}:${MINTCOIND_GROUP}" \
+	"${MINTCOIND_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${MINTCOIND_USER}:${MINTCOIND_GROUP}" \
+	"${MINTCOIND_PIDDIR}"
+
+	checkpath -f \
+	-o ${MINTCOIND_USER}:${MINTCOIND_GROUP} \
+	-m 0660 \
+	${MINTCOIND_CONFIGFILE}
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if ! grep -qs '^rpcpassword=' "${MINTCOIND_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run mintcoind."
+		eerror "The setting must appear in ${MINTCOIND_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"Mintcoin Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

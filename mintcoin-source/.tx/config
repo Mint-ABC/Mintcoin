@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[mintcoin.qt-translation-017x]
+file_filter = src/qt/locale/mintcoin_<lang>.ts
+source_file = src/qt/locale/mintcoin_en.ts
+source_lang = en

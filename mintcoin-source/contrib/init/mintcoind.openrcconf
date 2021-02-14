@@ -1,0 +1,33 @@
+# /etc/conf.d/mintcoind: config file for /etc/init.d/mintcoind
+
+# Config file location
+#MINTCOIND_CONFIGFILE="/etc/mintcoin/mintcoin.conf"
+
+# What directory to write pidfile to?  (created and owned by $MINTCOIND_USER)
+#MINTCOIND_PIDDIR="/var/run/mintcoind"
+
+# What filename to give the pidfile
+#MINTCOIND_PIDFILE="${MINTCOIND_PIDDIR}/mintcoind.pid"
+
+# Where to write mintcoind data (be mindful that the blockchain is large)
+#MINTCOIND_DATADIR="/var/lib/mintcoind"
+
+# User and group to own mintcoind process
+#MINTCOIND_USER="mintcoin"
+#MINTCOIND_GROUP="mintcoin"
+
+# Path to mintcoind executable
+#MINTCOIND_BIN="/usr/bin/mintcoind"
+
+# Nice value to run mintcoind under
+#MINTCOIND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#MINTCOIND_OPTS=""
+
+# The timeout in seconds OpenRC will wait for mintcoind to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+MINTCOIND_SIGTERM_TIMEOUT=60
